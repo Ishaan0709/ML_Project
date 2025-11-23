@@ -1,6 +1,9 @@
 streamlit
-langchain
+scikit-learn
+pandas
+numpy
 openai
+langchain
 faiss-cpu
-pymupdf
 python-dotenv
+pymupdf
