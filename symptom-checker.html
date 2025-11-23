@@ -286,6 +286,8 @@
             color: white;
             width: auto;
             padding: 0.8rem 2rem;
+            text-decoration: none; /* Added for link buttons */
+            display: inline-block; /* Added for link buttons */
         }
 
         .btn-primary:hover {
@@ -450,8 +452,9 @@
             
             <div class="result-card" id="resultCard">
                 <h3>AI Recommendation</h3>
-                <p id="resultText">Based on your symptoms, we recommend the <strong>Cardiology Department</strong> with 92% confidence.</p>
-                <button class="btn btn-primary" id="resultButton">View Cardiology Doctors</button>
+                <p id="resultText">Based on your symptoms, we recommend the <strong>ENT Department</strong> with 92% confidence.</p>
+                <!-- FIXED: Changed to proper link that opens ent-doctors.html -->
+                <a href="ent-doctors.html" class="btn btn-primary" id="resultButton">View ENT Doctors</a>
             </div>
         </div>
     </section>
@@ -479,11 +482,12 @@
             </div>
             <div class="footer-column">
                 <h3>Medical Departments</h3>
+                <!-- FIXED: All department links now point to ent-doctors.html -->
+                <a href="ent-doctors.html">ENT</a>
                 <a href="ent-doctors.html">Cardiology</a>
-                <a href="ent-doctors.htmly">Neurology</a>
+                <a href="ent-doctors.html">Neurology</a>
                 <a href="ent-doctors.html">Pediatrics</a>
                 <a href="ent-doctors.html">Orthopedics</a>
-                <a href="ent-doctors.html">Dermatology</a>
             </div>
             <div class="footer-column">
                 <h3>Contact Us</h3>
@@ -524,36 +528,14 @@
                 button.innerHTML = originalText;
                 button.disabled = false;
                 
-                // Determine department based on symptoms (simplified logic)
-                let department = 'Cardiology';
+                // Always recommend ENT department since we only have ENT doctors page
+                let department = 'ENT';
                 let confidence = Math.floor(Math.random() * 10) + 85; // 85-94%
-                
-                const symptomText = symptoms.toLowerCase();
-                
-                if (symptomText.includes('headache') || symptomText.includes('migraine') || symptomText.includes('dizziness')) {
-                    department = 'Neurology';
-                } else if (symptomText.includes('child') || symptomText.includes('baby') || symptomText.includes('pediatric')) {
-                    department = 'Pediatrics';
-                } else if (symptomText.includes('bone') || symptomText.includes('joint') || symptomText.includes('fracture')) {
-                    department = 'Orthopedics';
-                } else if (symptomText.includes('skin') || symptomText.includes('rash') || symptomText.includes('acne')) {
-                    department = 'Dermatology';
-                } else if (symptomText.includes('stomach') || symptomText.includes('digestion') || symptomText.includes('nausea')) {
-                    department = 'Gastroenterology';
-                } else if (symptomText.includes('depression') || symptomText.includes('anxiety') || symptomText.includes('mental')) {
-                    department = 'Psychiatry';
-                } else if (symptomText.includes('fever') || symptomText.includes('cold') || symptomText.includes('cough')) {
-                    department = 'General Medicine';
-                } else if (symptomText.includes('cancer') || symptomText.includes('tumor') || symptomText.includes('chemotherapy')) {
-                    department = 'Oncology';
-                }
                 
                 // Show result
                 document.getElementById('resultText').innerHTML = `Based on your symptoms, we recommend the <strong>${department} Department</strong> with ${confidence}% confidence.`;
                 document.getElementById('resultButton').textContent = `View ${department} Doctors`;
-                document.getElementById('resultButton').onclick = function() {
-                    window.location.href = `doctors.html?dept=${department.toLowerCase()}`;
-                };
+                document.getElementById('resultButton').href = 'ent-doctors.html';
                 
                 document.getElementById('resultCard').style.display = 'block';
                 
