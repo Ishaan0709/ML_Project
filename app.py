@@ -31,6 +31,20 @@ if not api_key:
 DOCTOR_NAME = "Dr. Kshitij Bhatnagar"
 DATASET_PATH = "doctor_kshitij_cases.csv"
 
+
+def test_openai():
+    client = OpenAI(api_key=api_key)
+    try:
+        models = client.models.list()
+        st.success(f"✅ OpenAI key working. Total models: {len(models.data)}")
+    except Exception as e:
+        st.error(f"❌ OpenAI error: {e}")
+
+# sidebar ya main me
+if st.button("Test OpenAI Connection"):
+    test_openai()
+
+
 # =========================================================
 #  TEMPERATURE CONVERSION FUNCTIONS
 # =========================================================
@@ -1052,6 +1066,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
