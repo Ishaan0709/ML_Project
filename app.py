@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 
-from sklearn.model_selection import train_test_splita
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
@@ -1047,6 +1047,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
