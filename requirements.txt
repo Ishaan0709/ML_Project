@@ -1,9 +1,13 @@
 streamlit
-scikit-learn
 pandas
 numpy
-openai
+scikit-learn
+matplotlib
+
 langchain
+langchain-openai
 faiss-cpu
-python-dotenv
 pymupdf
+python-dotenv
+openai
+tqdm
