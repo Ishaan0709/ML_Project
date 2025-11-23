@@ -15,10 +15,17 @@ from langchain_openai import ChatOpenAI
 # =========================================================
 #  CONFIG + ENV
 # =========================================================
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
+api_key = st.secrets.get("OPENAI_API_KEY")
+
+# If local (no st.secrets found) → fallback to .env
 if not api_key:
-    st.error("OpenAI API key not found. Please set it in .env file as OPENAI_API_KEY.")
+    from dotenv import load_dotenv
+    load_dotenv()
+    api_key = os.getenv("OPENAI_API_KEY")
+
+# FINAL CHECK
+if not api_key:
+    st.error("⚠ No API key found! Please set it in Streamlit Secrets or .env")
     st.stop()
 
 DOCTOR_NAME = "Dr. Kshitij Bhatnagar"
@@ -1038,4 +1045,5 @@ def main():
                 """)
 
 if __name__ == "__main__":
+
     main()
