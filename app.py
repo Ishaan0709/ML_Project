@@ -390,7 +390,12 @@ def build_llm_response(structured_data, risk_score, risk_level, is_emergency=Fal
     """
     Uses OpenAI to generate natural language explanation
     """
-    llm = ChatOpenAI(api_key=api_key, model_name="gpt-4o-mini", temperature=0.5)
+    llm = ChatOpenAI(
+    model="gpt-4o-mini",   # ya "gpt-4.1-mini" etc.
+    api_key=api_key,
+    temperature=0.5,
+)
+
 
     if is_emergency:
         system_prompt = f"""
@@ -1047,6 +1052,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
