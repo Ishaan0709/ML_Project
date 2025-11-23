@@ -508,41 +508,58 @@
         });
 
         // Symptom analysis function
-        function analyzeSymptoms() {
-            const symptoms = document.getElementById('symptoms').value;
-            
-            if (!symptoms) {
-                alert('Please describe your symptoms to continue.');
-                return;
-            }
-            
-            // Show loading state
-            const button = document.querySelector('#symptomForm .btn');
-            const originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing with AI...';
-            button.disabled = true;
-            
-            // Simulate AI analysis
-            setTimeout(function() {
-                // Reset button
-                button.innerHTML = originalText;
-                button.disabled = false;
-                
-                // Always recommend ENT department since we only have ENT doctors page
-                let department = 'ENT';
-                let confidence = Math.floor(Math.random() * 10) + 85; // 85-94%
-                
-                // Show result
-                document.getElementById('resultText').innerHTML = `Based on your symptoms, we recommend the <strong>${department} Department</strong> with ${confidence}% confidence.`;
-                document.getElementById('resultButton').textContent = `View ${department} Doctors`;
-                document.getElementById('resultButton').href = 'ent-doctors.html';
-                
-                document.getElementById('resultCard').style.display = 'block';
-                
-                // Scroll to result
-                document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 2000);
+        // Symptom analysis function
+function analyzeSymptoms() {
+    const symptoms = document.getElementById('symptoms').value.toLowerCase();
+    
+    if (!symptoms) {
+        alert('Please describe your symptoms to continue.');
+        return;
+    }
+    
+    // Show loading state
+    const button = document.querySelector('#symptomForm .btn');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing with AI...';
+    button.disabled = true;
+    
+    // Simulate AI analysis
+    setTimeout(function() {
+        // Reset button
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        // Analyze symptoms and recommend appropriate department
+        let department = 'General Practice';
+        let confidence = Math.floor(Math.random() * 10) + 85;
+        
+        // Symptom-based department mapping
+        if (symptoms.includes('chest') || symptoms.includes('heart') || symptoms.includes('breath') || symptoms.includes('palpitation')) {
+            department = 'Cardiology';
+        } else if (symptoms.includes('head') || symptoms.includes('migraine') || symptoms.includes('dizziness') || symptoms.includes('memory')) {
+            department = 'Neurology';
+        } else if (symptoms.includes('ear') || symptoms.includes('nose') || symptoms.includes('throat') || symptoms.includes('sinus')) {
+            department = 'ENT';
+        } else if (symptoms.includes('child') || symptoms.includes('baby') || symptoms.includes('pediatric') || symptoms.includes('infant')) {
+            department = 'Pediatrics';
+        } else if (symptoms.includes('bone') || symptoms.includes('joint') || symptoms.includes('fracture') || symptoms.includes('arthritis')) {
+            department = 'Orthopedics';
+        } else if (symptoms.includes('skin') || symptoms.includes('rash') || symptoms.includes('acne') || symptoms.includes('dermatitis')) {
+            department = 'Dermatology';
         }
+        
+        // Show result
+        document.getElementById('resultText').innerHTML = `Based on your symptoms, we recommend the <strong>${department} Department</strong> with ${confidence}% confidence.`;
+        document.getElementById('resultButton').textContent = `View ${department} Doctors`;
+        document.getElementById('resultButton').href = 'ent-doctors.html'; // Still linking to ENT page for now
+        
+        document.getElementById('resultCard').style.display = 'block';
+        
+        // Scroll to result
+        document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 2000);
+}
     </script>
 </body>
 </html>
+
