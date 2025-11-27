@@ -2,7 +2,6 @@ import os
 import streamlit as st
 import pandas as pd
 import numpy as np
-from dotenv import load_dotenv
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -12,24 +11,6 @@ from sklearn.svm import SVR
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.impute import SimpleImputer
-
-from langchain_openai import ChatOpenAI
-from openai import OpenAI
-
-# =========================================================
-#  CONFIG + ENV
-# =========================================================
-api_key = st.secrets.get("OPENAI_API_KEY")
-
-# If local (no st.secrets found) → fallback to .env
-if not api_key:
-    load_dotenv()
-    api_key = os.getenv("OPENAI_API_KEY")
-
-# FINAL CHECK
-if not api_key:
-    st.error("⚠ No API key found! Please set it in Streamlit Secrets or .env")
-    st.stop()
 
 DOCTOR_NAME = "Dr. Kshitij Bhatnagar"
 DATASET_PATH = "doctor_kshitij_cases.csv"
@@ -413,6 +394,113 @@ def get_emergency_advice(conditions):
     return "\n".join(advice)
 
 # =========================================================
+#  RULE-BASED MEDICAL ADVICE SYSTEM (NO API NEEDED)
+# =========================================================
+def generate_medical_advice(patient_data, risk_score, risk_level, is_emergency=False, emergency_conditions=None):
+    """
+    Generate medical advice based on rules and symptoms without needing API
+    """
+    
+    if is_emergency:
+        emergency_advice = get_emergency_advice(emergency_conditions)
+        
+        advice = f"""
+🚨 **EMERGENCY MEDICAL GUIDANCE** 🚨
+
+**Critical Conditions Detected:**
+{', '.join(emergency_conditions)}
+
+{emergency_advice}
+
+**Additional Emergency Notes:**
+• Do not hesitate to call emergency services (911/112/108)
+• Keep your phone charged and accessible
+• Have someone stay with you if possible
+• Bring all current medications to the hospital
+• Inform emergency personnel of all symptoms
+
+**⚠️ IMPORTANT: This is emergency guidance. Seek immediate medical attention.**
+"""
+    else:
+        # Rule-based advice based on symptoms and risk
+        symptoms_advice = []
+        precautions = []
+        medications = []
+        
+        # Temperature advice
+        temp = patient_data.get('temperature', 37)
+        if temp >= 39.0:
+            symptoms_advice.append("• High fever detected - focus on fever management")
+            medications.append("• Paracetamol 650mg every 6 hours for fever")
+        elif temp >= 38.0:
+            symptoms_advice.append("• Mild fever - monitor temperature regularly")
+            medications.append("• Paracetamol 650mg as needed for fever above 38.5°C")
+        
+        # Cough and throat
+        if patient_data.get('cough', False) and patient_data.get('throat_pain', False):
+            symptoms_advice.append("• Cough with throat pain suggests upper respiratory infection")
+            medications.append("• Throat lozenges and warm salt water gargles")
+            medications.append("• Cough suppressant if cough is dry and bothersome")
+        
+        # Ear pain
+        if patient_data.get('ear_pain', False):
+            symptoms_advice.append("• Ear pain may indicate infection - avoid water entry")
+            medications.append("• Ibuprofen 400mg for pain relief (if no stomach issues)")
+        
+        # Headache and body pain
+        if patient_data.get('headache', False) or patient_data.get('body_pain', False):
+            symptoms_advice.append("• General body aches and headache - ensure proper rest")
+            medications.append("• Paracetamol 650mg or Ibuprofen 400mg for pain relief")
+        
+        # General precautions
+        precautions.extend([
+            "• Get plenty of rest and sleep",
+            "• Stay hydrated with water, soups, and electrolyte solutions",
+            "• Eat light, nutritious meals",
+            "• Maintain good hygiene to prevent spread",
+            "• Monitor symptoms daily"
+        ])
+        
+        # Risk-based recommendations
+        if risk_score >= 70:
+            visit_timing = "**Visit Recommendation:** Consult doctor within 24 hours"
+            urgency = "High priority - schedule appointment soon"
+        elif risk_score >= 40:
+            visit_timing = "**Visit Recommendation:** Consult doctor within 2-3 days if no improvement"
+            urgency = "Moderate priority - monitor closely"
+        else:
+            visit_timing = "**Visit Recommendation:** Routine follow-up if symptoms persist beyond 5 days"
+            urgency = "Low priority - self-care recommended"
+        
+        advice = f"""
+📋 **MEDICAL GUIDANCE BASED ON SYMPTOMS**
+
+**Risk Assessment:** {risk_score:.1f}/100 ({risk_level})
+
+**Primary Symptoms Analysis:**
+{chr(10).join(symptoms_advice) if symptoms_advice else "• General symptomatic care recommended"}
+
+**Self-Care Measures:**
+{chr(10).join(precautions)}
+
+**Medication Suggestions (OTC):**
+{chr(10).join(medications) if medications else "• No specific medications recommended at this time"}
+
+{visit_timing}
+{urgency}
+
+**Follow-up Instructions:**
+• Return if symptoms worsen or new symptoms develop
+• Complete any prescribed course of medication
+• Maintain follow-up as directed
+
+**Note:** This is preliminary guidance based on symptom patterns. 
+Final diagnosis and prescription should come from your healthcare provider.
+"""
+
+    return advice
+
+# =========================================================
 #  ADVANCED ML MODEL TRAINING (ENSEMBLE + HYPERPARAMETERS)
 # =========================================================
 @st.cache_resource(show_spinner=True)
@@ -566,66 +654,6 @@ def map_risk_level(score: float) -> tuple:
     else:
         return "Very High Risk", "risk-very-high"
 
-def build_llm_response(structured_data, risk_score, risk_level, is_emergency=False, emergency_conditions=None):
-    """
-    Uses OpenAI to generate natural language explanation
-    """
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        api_key=api_key,
-        temperature=0.5,
-    )
-
-    if is_emergency:
-        system_prompt = f"""
-🚨 **EMERGENCY MODE ACTIVATED** 🚨
-
-You are an AI assistant working for {DOCTOR_NAME}, detecting EMERGENCY medical conditions.
-The patient shows critical symptoms requiring immediate attention.
-
-CRITICAL CONDITIONS DETECTED: {emergency_conditions}
-
-Provide:
-1. 🆘 IMMEDIATE first-aid measures with generic emergency medicines
-2. 📋 Step-by-step emergency protocol
-3. 🏥 When to go to emergency room vs urgent care
-4. 💊 Emergency medicines that can be taken (generic names only)
-5. 🚫 Important contraindications and warnings
-
-EMPHASIZE: This is EMERGENCY guidance. Doctor consultation is URGENT.
-"""
-    else:
-        system_prompt = f"""
-You are an AI assistant working for {DOCTOR_NAME}, a very experienced physician.
-You NEVER replace the doctor, you only give preliminary guidance based on
-doctor's past case data.
-
-Provide:
-1. A short summary of what might be going on (2-3 lines)
-2. Precautions and lifestyle steps
-3. Recommended OTC medicines (generic names only)
-4. When to visit OPD (today/within 1-2 days/routine)
-5. Final disclaimer that doctor will review
-"""
-
-    user_content = f"""
-Patient information:
-{structured_data}
-
-Predicted risk score (0-100): {risk_score:.1f}
-Risk level: {risk_level}
-
-{'🚨 EMERGENCY SITUATION - Provide urgent medical guidance' if is_emergency else 'Provide routine medical guidance'}
-"""
-
-    response = llm.invoke(
-        [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content},
-        ]
-    )
-    return response.content
-
 def generate_summary_md(conversation, patient_info, prediction_info, is_emergency=False):
     """
     Creates a markdown consultation summary
@@ -708,7 +736,7 @@ def main():
         st.markdown(f"""
         <div style='text-align: center; padding: 1rem 0;'>
             <h2 style='color: #f8fafc; margin: 0;'>🩺 MEDICAL AI</h2>
-            <p style='color: #94a3b8; margin: 0; font-size: 0.9rem;'>Advanced Ensemble ML · Real-time Analysis</p>
+            <p style='color: #94a3b8; margin: 0; font-size: 0.9rem;'>Advanced Ensemble ML · Rule-Based Advice</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -759,7 +787,7 @@ def main():
     <div style='text-align: center; padding: 1rem 0 2rem 0;'>
         <h1 style='color: #f8fafc; margin: 0; font-size: 2.5rem;'>⚕ ADVANCED MEDICAL AI CONSULTATION</h1>
         <p style='color: #94a3b8; margin: 0.5rem 0 0 0; font-size: 1.1rem;'>
-        Ensemble ML · Feature Engineering · Real-time Risk Assessment
+        Ensemble ML · Rule-Based Medical Advice · No API Required
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -917,7 +945,7 @@ def main():
                 # Submit Button
                 col1, col2, col3 = st.columns([1, 2, 1])
                 with col2:
-                    submitted = st.form_submit_button("**🔍 Get AI Consultation**", 
+                    submitted = st.form_submit_button("**🔍 Get Medical Consultation**", 
                                                     use_container_width=True,
                                                     type="primary")
 
@@ -998,33 +1026,10 @@ def main():
                     "features": feature_row,
                 }
 
-                # Build structured description for LLM
-                structured_text = (
-                    f"Name: {name}, Age: {age}, Gender: {gender_display}\n"
-                    f"Temperature: {temp_celsius:.1f}°C ({temp_fahrenheit:.1f}°F), "
-                    f"BP: {sys_bp}/{dias_bp}, Heart Rate: {heart_rate} bpm\n"
-                    f"Duration of symptoms: {duration} days\n"
-                    f"Symptoms: "
-                    f"{'cough, ' if cough else ''}"
-                    f"{'throat pain, ' if throat_pain else ''}"
-                    f"{'ear pain, ' if ear_pain else ''}"
-                    f"{'chest pain, ' if chest_pain else ''}"
-                    f"{'headache, ' if headache else ''}"
-                    f"{'body pain, ' if body_pain else ''}"
-                    f"{'breathing difficulty, ' if breathing_difficulty else ''}".rstrip(", ")
-                )
-
-                if free_text.strip():
-                    structured_text += f"\n\nPatient description: {free_text.strip()}"
-
-                # Add emergency info if applicable
-                if st.session_state.is_emergency:
-                    structured_text += f"\n\n🚨 EMERGENCY CONDITIONS: {', '.join(emergency_conditions)}"
-
-                # LLM explanation
-                with st.spinner("🔬 Analyzing with Advanced AI..." if not st.session_state.is_emergency else "🚨 Analyzing emergency situation..."):
-                    ai_text = build_llm_response(
-                        structured_text, 
+                # Generate medical advice using rule-based system (NO API)
+                with st.spinner("🔬 Analyzing with Medical AI..." if not st.session_state.is_emergency else "🚨 Analyzing emergency situation..."):
+                    ai_text = generate_medical_advice(
+                        feature_row,
                         risk_score, 
                         risk_level,
                         st.session_state.is_emergency,
@@ -1036,12 +1041,7 @@ def main():
                 patient_msg = free_text if free_text.strip() else "Patient provided basic health information"
                 st.session_state.conversation.append(("Patient", patient_msg, False))
                 
-                # Add emergency advice first if applicable
-                if st.session_state.is_emergency:
-                    emergency_advice = get_emergency_advice(emergency_conditions)
-                    st.session_state.conversation.append(("AI Assistant - EMERGENCY", emergency_advice, True))
-                
-                st.session_state.conversation.append(("AI Assistant", ai_text, st.session_state.is_emergency))
+                st.session_state.conversation.append(("Medical AI Assistant", ai_text, st.session_state.is_emergency))
                 st.session_state.consultation_done = False
                 st.session_state.waiting_for_approval = True
                 st.session_state.approval_status = None
@@ -1067,7 +1067,7 @@ def main():
                                 <strong>Score:</strong> {rs:.1f}/100 | <strong>Level:</strong> {rl}
                                 </p>
                                 <p style='margin: 0.3rem 0 0 0; color: #94a3b8; font-size: 0.9rem;'>
-                                Powered by Ensemble ML with Feature Engineering
+                                Powered by Ensemble ML with Rule-Based Medical Logic
                                 </p>
                             </div>
                             <div style='font-size: 1.5rem; color: #e2e8f0;'>
