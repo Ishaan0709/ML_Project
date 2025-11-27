@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardiology Specialists - DocAI Connect</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --secondary: #64b5f6;
+            --accent: #4fc3f7;
+            --light: #f5f9ff;
+            --dark: #0a1a35;
+            --text: #333333;
+            --gray: #e0e0e0;
+            --success: #4caf50;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            font-size: 0.98rem;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Page Header */
+        .page-header {
+            padding: 2.5rem 1.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 2.4rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .page-header p {
+            font-size: 1.05rem;
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--light);
+        }
+
+        /* Main Content */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem 3rem;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .section-title p {
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 0.98rem;
+        }
+
+        /* Doctors Grid */
+        .doctors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .doctor-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid var(--gray);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .doctor-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+
+        .doctor-image {
+            height: 220px;
+            overflow: hidden;
+        }
+
+        .doctor-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .doctor-card:hover .doctor-image img {
+            transform: scale(1.05);
+        }
+
+        .doctor-info {
+            padding: 1.4rem 1.5rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .doctor-name-rating {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .doctor-name-rating h3 {
+            font-size: 1.35rem;
+            color: var(--dark);
+        }
+
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--light);
+            padding: 0.25rem 0.7rem;
+            border-radius: 20px;
+        }
+
+        .rating i {
+            color: #ffc107;
+        }
+
+        .rating span {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .doctor-details {
+            margin-bottom: 1.1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-item i {
+            color: var(--primary);
+            margin-top: 0.15rem;
+            min-width: 16px;
+        }
+
+        .detail-item p {
+            color: #555;
+            font-size: 0.98rem;
+        }
+
+        .doctor-description {
+            font-style: italic;
+            color: #555;
+            margin-bottom: 1rem;
+            padding: 0.8rem 0.9rem;
+            background: var(--light);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            font-size: 0.95rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.6rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 0.98rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            margin-top: auto;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 115, 232, 0.3);
+        }
+
+        /* Back Button */
+        .back-button {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            width: auto;
+            padding: 0.7rem 1.5rem;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 2.5rem 2rem 1rem;
+            margin-top: 2rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto 2rem;
+        }
+
+        .footer-column h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1.1rem;
+            color: var(--accent);
+        }
+
+        .footer-column p,
+        .footer-column a {
+            color: #bbb;
+            margin-bottom: 0.6rem;
+            display: block;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .footer-column a:hover {
+            color: var(--accent);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 0.8rem;
+        }
+
+        .social-links a {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background-color: var(--accent);
+            transform: translateY(-3px);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .nav-links {
+                gap: 1.2rem;
+            }
+
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .section-title h2 {
+                font-size: 1.8rem;
+            }
+
+            .doctors-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                <span>DocAI Connect</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="departments.html">Departments</a>
+                <a href="symptom-checker.html">Symptom Checker</a>
+                <a href="#">How It Works</a>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <h1>Cardiology Department</h1>
+        <p>Meet our expert cardiology specialists and their AI assistants specializing in heart and cardiovascular health</p>
+    </section>
+
+    <!-- Main Content -->
+    <section class="main-container">
+        <div class="section-title">
+            <h2>Our Cardiology Specialists</h2>
+            <p>Each doctor is supported by a specialized AI assistant trained on their medical expertise</p>
+        </div>
+
+        <div class="doctors-grid">
+            <!-- Doctor 1 -->
+            <div class="doctor-card">
+                <div class="doctor-image">
+                    <img src="cardiology1.jpg" alt="Dr. Amit Sharma">
+                </div>
+                <div class="doctor-info">
+                    <div class="doctor-name-rating">
+                        <h3>Dr. Amit Sharma</h3>
+                        <div class="rating">
+                            <i class="fas fa-star"></i>
+                            <span>4.9</span>
+                        </div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <p>amit.sharma@example.com</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-graduation-cap"></i>
+                            <p>DM Cardiology, MD Medicine, MBBS</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-hospital"></i>
+                            <p>Apollo Hospitals, Delhi</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <p>+91-9876543216</p>
+                        </div>
+                    </div>
+                    <div class="doctor-description">
+                        "Interventional cardiology specialist with expertise in angioplasty and complex coronary interventions."
+                    </div>
+                    <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
+                        <i class="fas fa-robot"></i> Consult AI Doctor
+                    </button>
+                </div>
+            </div>
+
+            <!-- Doctor 2 -->
+            <div class="doctor-card">
+                <div class="doctor-image">
+                    <img src="cardiology2.jpg" alt="Dr. Priya Reddy">
+                </div>
+                <div class="doctor-info">
+                    <div class="doctor-name-rating">
+                        <h3>Dr. Priya Reddy</h3>
+                        <div class="rating">
+                            <i class="fas fa-star"></i>
+                            <span>4.8</span>
+                        </div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <p>priya.reddy@example.com</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-graduation-cap"></i>
+                            <p>DM Cardiology, Fellowship in Electrophysiology</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-hospital"></i>
+                            <p>Fortis Hospital, Mumbai</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <p>+91-9876543217</p>
+                        </div>
+                    </div>
+                    <div class="doctor-description">
+                        "Cardiac electrophysiologist specializing in arrhythmia management and pacemaker implants."
+                    </div>
+                    <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
+                        <i class="fas fa-robot"></i> Consult AI Doctor
+                    </button>
+                </div>
+            </div>
+
+            <!-- Doctor 3 -->
+            <div class="doctor-card">
+                <div class="doctor-image">
+                    <img src="cardiology3.jpg" alt="Dr. Rajesh Kumar">
+                </div>
+                <div class="doctor-info">
+                    <div class="doctor-name-rating">
+                        <h3>Dr. Rajesh Kumar</h3>
+                        <div class="rating">
+                            <i class="fas fa-star"></i>
+                            <span>4.7</span>
+                        </div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <p>rajesh.kumar@example.com</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-graduation-cap"></i>
+                            <p>DM Cardiology, Fellowship in Heart Failure</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-hospital"></i>
+                            <p>Max Super Speciality, Delhi</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <p>+91-9876543218</p>
+                        </div>
+                    </div>
+                    <div class="doctor-description">
+                        "Heart failure and transplant specialist with expertise in advanced cardiac therapies."
+                    </div>
+                    <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
+                        <i class="fas fa-robot"></i> Consult AI Doctor
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="back-button">
+            <button class="btn btn-secondary" onclick="location.href='departments.html'">
+                <i class="fas fa-arrow-left"></i> Back to Departments
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>DocAI Connect</h3>
+                <p>Revolutionizing healthcare with AI-powered medical assistance available 24/7.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <a href="index.html">Home</a>
+                <a href="departments.html">Departments</a>
+                <a href="symptom-checker.html">Symptom Checker</a>
+                <a href="#">About Us</a>
+                <a href="#">Contact</a>
+            </div>
+            <div class="footer-column">
+                <h3>Medical Departments</h3>
+                <a href="cardiology-doctors.html">Cardiology</a>
+                <a href="ent-doctors.html">ENT</a>
+                <a href="neurology-doctors.html">Neurology</a>
+                <a href="pediatrics-doctors.html">Pediatrics</a>
+                <a href="orthopedics-doctors.html">Orthopedics</a>
+            </div>
+            <div class="footer-column">
+                <h3>Contact Us</h3>
+                <p><i class="fas fa-map-marker-alt"></i> 123 Medical Avenue, Health City</p>
+                <p><i class="fas fa-phone"></i> +1 234 567 8900</p>
+                <p><i class="fas fa-envelope"></i> info@docai-connect.com</p>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2023 DocAI Connect. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Simple animation for doctor cards on scroll
+        document.addEventListener('DOMContentLoaded', function() {
+            const doctorCards = document.querySelectorAll('.doctor-card');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = 1;
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            doctorCards.forEach(card => {
+                card.style.opacity = 0;
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>
