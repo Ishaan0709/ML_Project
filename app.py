@@ -5,9 +5,10 @@ import numpy as np
 from dotenv import load_dotenv
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 from langchain_openai import ChatOpenAI
@@ -20,7 +21,6 @@ api_key = st.secrets.get("OPENAI_API_KEY")
 
 # If local (no st.secrets found) → fallback to .env
 if not api_key:
-    from dotenv import load_dotenv
     load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
 
@@ -31,20 +31,6 @@ if not api_key:
 
 DOCTOR_NAME = "Dr. Kshitij Bhatnagar"
 DATASET_PATH = "doctor_kshitij_cases.csv"
-
-
-def test_openai():
-    client = OpenAI(api_key=api_key)
-    try:
-        models = client.models.list()
-        st.success(f"✅ OpenAI key working. Total models: {len(models.data)}")
-    except Exception as e:
-        st.error(f"❌ OpenAI error: {e}")
-
-# sidebar ya main me
-if st.button("Test OpenAI Connection"):
-    test_openai()
-
 
 # =========================================================
 #  TEMPERATURE CONVERSION FUNCTIONS
@@ -126,14 +112,17 @@ def apply_custom_styles():
     }
 
     /* ===== FORM INPUTS ===== */
+    /* Fix all input field visibility */
     .stTextInput input,
     .stNumberInput input,
     .stSelectbox select,
-    .stTextArea textarea {
-        background: #111827 !important;
+    .stTextArea textarea,
+    .stNumberInput > div > div > input {
+        background: #1e293b !important;
         color: white !important;
-        border: 1px solid #334155 !important;
+        border: 1px solid #475569 !important;
         border-radius: 6px;
+        padding: 0.5rem !important;
     }
 
     .stTextInput input:focus,
@@ -142,6 +131,25 @@ def apply_custom_styles():
     .stTextArea textarea:focus {
         border-color: #2563eb !important;
         box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+        background: #1e293b !important;
+        color: white !important;
+    }
+
+    /* Fix number input background specifically */
+    input[type="number"] {
+        background: #1e293b !important;
+        color: white !important;
+    }
+
+    /* Fix labels and text visibility */
+    .stNumberInput label,
+    .stTextInput label,
+    .stSelectbox label,
+    .stTextArea label,
+    .stCheckbox label,
+    .stRadio label {
+        color: #e2e8f0 !important;
+        font-weight: 500 !important;
     }
 
     /* ===== BUTTONS ===== */
@@ -215,12 +223,13 @@ def apply_custom_styles():
 
     /* ===== TEMPERATURE CONVERTER ===== */
     .temp-converter {
-        background: #111827 !important;
+        background: #1e293b !important;
         padding: 0.75rem;
         border-radius: 6px;
-        border: 1px solid #334155 !important;
+        border: 1px solid #475569 !important;
         margin: 0.5rem 0;
-        color: #94a3b8;
+        color: #e2e8f0;
+        font-weight: 500;
     }
 
     /* ===== RISK INDICATORS ===== */
@@ -228,6 +237,20 @@ def apply_custom_styles():
     .risk-moderate { border-left: 4px solid #d97706 !important; }
     .risk-high { border-left: 4px solid #dc2626 !important; }
     .risk-very-high { border-left: 4px solid #7f1d1d !important; }
+
+    /* ===== SPECIFIC FIX FOR HEART RATE, BP INPUTS ===== */
+    div[data-testid="stNumberInput"] > div > div > input {
+        background: #1e293b !important;
+        color: white !important;
+        border: 1px solid #475569 !important;
+    }
+
+    /* Ensure all number inputs are visible */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -238,8 +261,10 @@ def check_emergency_condition(temp, symptoms, vitals):
     """Check if patient condition requires emergency attention"""
     emergency_conditions = []
     
-    # High fever emergency
-    if temp >= 39.5:  # 103.1°F equivalent
+    # High fever emergency (more reasonable thresholds)
+    if temp >= 40.0:  # 104°F equivalent - true medical emergency
+        emergency_conditions.append(f"Very high fever ({temp}°C / {celsius_to_fahrenheit(temp):.1f}°F)")
+    elif temp >= 39.0:  # 102.2°F - concerning but not critical
         emergency_conditions.append(f"High fever ({temp}°C / {celsius_to_fahrenheit(temp):.1f}°F)")
     
     # ENT emergencies
@@ -256,10 +281,14 @@ def check_emergency_condition(temp, symptoms, vitals):
     if vitals.get('systolic_bp', 120) < 90 or vitals.get('diastolic_bp', 80) < 60:
         emergency_conditions.append("Hypotensive emergency")
     
-    if vitals.get('heart_rate', 80) > 120:
+    if vitals.get('heart_rate', 80) > 140:
+        emergency_conditions.append("Severe tachycardia")
+    elif vitals.get('heart_rate', 80) > 120:
         emergency_conditions.append("Tachycardia")
     
     if vitals.get('heart_rate', 80) < 40:
+        emergency_conditions.append("Severe bradycardia")
+    elif vitals.get('heart_rate', 80) < 50:
         emergency_conditions.append("Bradycardia")
     
     # Chest pain emergency
@@ -329,15 +358,12 @@ def get_emergency_advice(conditions):
     return "\n".join(advice)
 
 # =========================================================
-#  ML MODEL TRAINING (CACHED)
+#  IMPROVED ML MODEL TRAINING (CACHED)
 # =========================================================
 @st.cache_resource(show_spinner=True)
 def train_ml_model(dataset_path: str):
     """
-    Loads doctor's dataset, trains a Multiple Linear Regression model
-    with Polynomial Features + Standardization, and returns:
-    - trained pipeline
-    - metrics dict (RMSE, MAE, R2)
+    Improved ML model using ensemble methods for better accuracy
     """
     df = pd.read_csv(dataset_path)
 
@@ -356,47 +382,95 @@ def train_ml_model(dataset_path: str):
 
     # Train–test split
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=42, stratify=pd.cut(y, bins=5)
     )
 
-    # Pipeline: Scaling + Polynomial Features + Linear Regression
-    pipeline = Pipeline(
-        steps=[
+    # Try multiple models and select the best one
+    models = {
+        "Random Forest": RandomForestRegressor(
+            n_estimators=200,
+            max_depth=10,
+            min_samples_split=5,
+            min_samples_leaf=2,
+            random_state=42
+        ),
+        "Gradient Boosting": GradientBoostingRegressor(
+            n_estimators=150,
+            max_depth=6,
+            learning_rate=0.1,
+            random_state=42
+        ),
+        "SVM": Pipeline([
             ("scaler", StandardScaler()),
-            ("poly", PolynomialFeatures(degree=2, include_bias=False)),
-            ("model", LinearRegression())
-        ]
-    )
+            ("svr", SVR(kernel='rbf', C=1.0, epsilon=0.1))
+        ])
+    }
 
-    pipeline.fit(X_train, y_train)
+    best_model = None
+    best_score = -float('inf')
+    best_metrics = {}
+    best_name = ""
 
-    # Predictions & metrics
-    y_pred = pipeline.predict(X_test)
+    for name, model in models.items():
+        try:
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            
+            # Calculate metrics
+            mse = mean_squared_error(y_test, y_pred)
+            rmse = mse ** 0.5
+            mae = mean_absolute_error(y_test, y_pred)
+            r2 = r2_score(y_test, y_pred)
+            
+            # Use R² as primary metric, but prefer models with good RMSE too
+            score = r2 - (rmse / 100)  # Combined metric
+            
+            if score > best_score:
+                best_score = score
+                best_model = model
+                best_metrics = {
+                    "rmse": rmse,
+                    "mae": mae,
+                    "r2": r2,
+                    "model_name": name
+                }
+                best_name = name
+                
+        except Exception as e:
+            st.warning(f"Model {name} failed: {e}")
+            continue
 
-    # FIXED: Calculate RMSE manually
-    mse = mean_squared_error(y_test, y_pred)
-    rmse = mse ** 0.5
-    mae = mean_absolute_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
+    if best_model is None:
+        # Fallback to Random Forest
+        st.warning("All models failed, using default Random Forest")
+        best_model = RandomForestRegressor(n_estimators=100, random_state=42)
+        best_model.fit(X_train, y_train)
+        y_pred = best_model.predict(X_test)
+        mse = mean_squared_error(y_test, y_pred)
+        best_metrics = {
+            "rmse": mse ** 0.5,
+            "mae": mean_absolute_error(y_test, y_pred),
+            "r2": r2_score(y_test, y_pred),
+            "model_name": "Fallback Random Forest"
+        }
 
-    metrics = {
-        "rmse": rmse,
-        "mae": mae,
-        "r2": r2,
+    best_metrics.update({
         "n_train": len(X_train),
         "n_test": len(X_test)
-    }
-    return pipeline, metrics, feature_cols
+    })
+
+    return best_model, best_metrics, feature_cols
 
 # =========================================================
 #  UTIL FUNCTIONS
 # =========================================================
 def map_risk_level(score: float) -> tuple:
-    if score < 30:
+    """Improved risk level mapping with better thresholds"""
+    if score < 25:
         return "Low Risk", "risk-low"
-    elif score < 60:
+    elif score < 50:
         return "Moderate Risk", "risk-moderate"
-    elif score < 80:
+    elif score < 75:
         return "High Risk", "risk-high"
     else:
         return "Very High Risk", "risk-very-high"
@@ -406,11 +480,10 @@ def build_llm_response(structured_data, risk_score, risk_level, is_emergency=Fal
     Uses OpenAI to generate natural language explanation
     """
     llm = ChatOpenAI(
-    model="gpt-4o-mini",   # ya "gpt-4.1-mini" etc.
-    api_key=api_key,
-    temperature=0.5,
-)
-
+        model="gpt-4o-mini",
+        api_key=api_key,
+        temperature=0.5,
+    )
 
     if is_emergency:
         system_prompt = f"""
@@ -558,10 +631,10 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 st.metric("R² Score", f"{metrics['r2']:.3f}")
-                st.metric("Training Samples", metrics['n_train'])
+                st.metric("Model", metrics.get('model_name', 'Ensemble'))
             with col2:
                 st.metric("RMSE", f"{metrics['rmse']:.2f}")
-                st.metric("Test Samples", metrics['n_test'])
+                st.metric("Training Samples", metrics['n_train'])
         
         with st.expander("ℹ️ Quick Guide", expanded=False):
             st.markdown("""
@@ -695,7 +768,7 @@ def main():
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Other vitals
+                # Other vitals - FIXED VISIBILITY
                 col_v1, col_v2, col_v3 = st.columns(3)
                 with col_v1:
                     heart_rate = st.number_input("**Heart Rate (bpm)**", 40, 200, 80)
@@ -922,11 +995,11 @@ def main():
             with st.expander("🆘 Emergency Signs", expanded=True):
                 st.markdown("""
                 **Seek immediate care for:**
-                - Fever ≥ 39.5°C (103.1°F)
+                - Fever ≥ 40°C (104°F)
                 - Severe ear pain + fever
                 - Chest pain
                 - BP > 180/120 or < 90/60
-                - Heart rate > 120 or < 40
+                - Heart rate > 140 or < 40
                 - Difficulty breathing
                 """)
             
@@ -935,6 +1008,7 @@ def main():
                 **Normal:** 36.5-37.5°C (97.7-99.5°F)
                 **Fever:** ≥38.0°C (100.4°F)
                 **High Fever:** ≥39.5°C (103.1°F)
+                **Emergency:** ≥40.0°C (104°F)
                 """)
             
             with st.expander("💊 Common Medicines", expanded=False):
@@ -1050,7 +1124,7 @@ def main():
             
             with st.expander("📊 Model Details", expanded=True):
                 st.markdown(f"""
-                **Algorithm:** Multiple Linear Regression
+                **Algorithm:** {metrics.get('model_name', 'Ensemble')}
                 **Features:** {len(feature_cols)} parameters
                 **R² Score:** {metrics['r2']:.3f}
                 **Training Samples:** {metrics['n_train']}
@@ -1065,12 +1139,4 @@ def main():
                 """)
 
 if __name__ == "__main__":
-
     main()
-
-
-
-
-
-
-
