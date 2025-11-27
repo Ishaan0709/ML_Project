@@ -7,9 +7,11 @@ from dotenv import load_dotenv
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, VotingRegressor
 from sklearn.svm import SVR
+from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.impute import SimpleImputer
 
 from langchain_openai import ChatOpenAI
 from openai import OpenAI
@@ -44,7 +46,7 @@ def celsius_to_fahrenheit(c_temp):
     return (c_temp * 9/5) + 32
 
 # =========================================================
-#  STYLING AND UI CONFIG
+#  STYLING AND UI CONFIG - IMPROVED VISIBILITY
 # =========================================================
 def apply_custom_styles():
     st.markdown("""
@@ -141,14 +143,31 @@ def apply_custom_styles():
         color: white !important;
     }
 
-    /* Fix labels and text visibility */
+    /* Fix labels and text visibility - IMPROVED CONTRAST */
     .stNumberInput label,
     .stTextInput label,
     .stSelectbox label,
     .stTextArea label,
     .stCheckbox label,
     .stRadio label {
-        color: #e2e8f0 !important;
+        color: #f1f5f9 !important;  /* Brighter white for better visibility */
+        font-weight: 600 !important; /* Bolder font */
+        font-size: 1.02rem !important;
+    }
+
+    /* Specific fix for radio buttons */
+    .stRadio > div {
+        color: #f1f5f9 !important;
+    }
+    
+    .stRadio > label {
+        color: #f1f5f9 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Radio button options visibility */
+    .stRadio [data-testid="stMarkdownContainer"] p {
+        color: #f1f5f9 !important;
         font-weight: 500 !important;
     }
 
@@ -197,19 +216,22 @@ def apply_custom_styles():
 
     /* ===== CHECKBOX STYLING ===== */
     .stCheckbox label {
-        color: #e2e8f0 !important;
+        color: #f1f5f9 !important;  /* Brighter white */
+        font-weight: 500 !important;
     }
 
     /* ===== RADIO BUTTONS ===== */
-    .stRadio label {
-        color: #e2e8f0 !important;
+    .stRadio div[data-testid="stMarkdownContainer"] p {
+        color: #f1f5f9 !important;
+        font-weight: 500 !important;
     }
 
     /* ===== EXPANDER STYLING ===== */
     .streamlit-expanderHeader {
         background: #1e293b !important;
-        color: #e2e8f0 !important;
+        color: #f1f5f9 !important;  /* Brighter white */
         border: 1px solid #334155 !important;
+        font-weight: 600;
     }
 
     /* ===== SCROLL BAR ===== */
@@ -250,6 +272,26 @@ def apply_custom_styles():
     input[type="number"]::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
+    }
+
+    /* ===== IMPROVED LABEL VISIBILITY ===== */
+    /* Make all form labels more visible */
+    div[data-testid="stForm"] label {
+        color: #f1f5f9 !important;
+        font-weight: 600 !important;
+        font-size: 1.02rem !important;
+    }
+
+    /* Specific fix for form sections */
+    .stForm label {
+        color: #f1f5f9 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Temperature section labels */
+    div[data-testid="stVerticalBlock"] > div > div > div > p {
+        color: #f1f5f9 !important;
+        font-weight: 600 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -294,6 +336,10 @@ def check_emergency_condition(temp, symptoms, vitals):
     # Chest pain emergency
     if symptoms.get('chest_pain'):
         emergency_conditions.append("Chest pain - Requires immediate evaluation")
+    
+    # Breathing difficulties
+    if symptoms.get('breathing_difficulty'):
+        emergency_conditions.append("Breathing difficulty - Emergency evaluation needed")
     
     return emergency_conditions
 
@@ -346,6 +392,15 @@ def get_emergency_advice(conditions):
             "• Monitor BP every 15 minutes"
         ])
     
+    if any("breathing" in cond.lower() for cond in conditions):
+        advice.extend([
+            "🆘 **BREATHING EMERGENCY:**",
+            "• Sit upright in a comfortable position",
+            "• Use pursed-lip breathing technique",
+            "• Stay calm and try to relax",
+            "• Use emergency inhaler if prescribed"
+        ])
+    
     advice.extend([
         "",
         "🚨 **URGENT: Proceed to nearest emergency department if:**",
@@ -358,16 +413,113 @@ def get_emergency_advice(conditions):
     return "\n".join(advice)
 
 # =========================================================
-#  IMPROVED ML MODEL TRAINING (CACHED)
+#  ADVANCED ML MODEL TRAINING (ENSEMBLE + HYPERPARAMETERS)
 # =========================================================
 @st.cache_resource(show_spinner=True)
 def train_ml_model(dataset_path: str):
     """
-    Improved ML model using ensemble methods for better accuracy
+    Advanced ML model using ensemble methods with feature engineering
     """
-    df = pd.read_csv(dataset_path)
+    try:
+        df = pd.read_csv(dataset_path)
+        
+        # Feature Engineering
+        df['bp_ratio'] = df['systolic_bp'] / df['diastolic_bp']
+        df['mean_arterial_pressure'] = df['diastolic_bp'] + (df['systolic_bp'] - df['diastolic_bp']) / 3
+        df['symptom_count'] = df[['cough', 'throat_pain', 'ear_pain', 'chest_pain', 'headache', 'body_pain']].sum(axis=1)
+        df['fever_indicator'] = (df['temperature'] > 38.0).astype(int)
+        
+        # Features & target
+        feature_cols = [
+            "age", "gender", "temperature",
+            "systolic_bp", "diastolic_bp", "heart_rate",
+            "cough", "throat_pain", "ear_pain",
+            "chest_pain", "headache", "body_pain",
+            "duration_days", "bp_ratio", "mean_arterial_pressure",
+            "symptom_count", "fever_indicator"
+        ]
+        target_col = "risk_score"
 
-    # Features & target
+        X = df[feature_cols]
+        y = df[target_col]
+
+        # Handle missing values
+        imputer = SimpleImputer(strategy='median')
+        X = pd.DataFrame(imputer.fit_transform(X), columns=feature_cols)
+
+        # Train–test split with stratification
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=pd.cut(y, bins=5)
+        )
+
+        # Advanced Ensemble Model
+        rf_model = RandomForestRegressor(
+            n_estimators=300,
+            max_depth=15,
+            min_samples_split=3,
+            min_samples_leaf=1,
+            max_features='sqrt',
+            bootstrap=True,
+            random_state=42,
+            n_jobs=-1
+        )
+        
+        gb_model = GradientBoostingRegressor(
+            n_estimators=200,
+            max_depth=8,
+            learning_rate=0.05,
+            subsample=0.8,
+            random_state=42
+        )
+        
+        svm_model = Pipeline([
+            ("scaler", StandardScaler()),
+            ("svr", SVR(kernel='rbf', C=2.0, epsilon=0.05, gamma='scale'))
+        ])
+        
+        ridge_model = Ridge(alpha=1.0, random_state=42)
+
+        # Voting Regressor (Ensemble)
+        ensemble_model = VotingRegressor([
+            ('rf', rf_model),
+            ('gb', gb_model),
+            ('svm', svm_model),
+            ('ridge', ridge_model)
+        ], weights=[3, 2, 1, 1])  # Higher weights for tree-based models
+
+        # Train ensemble model
+        ensemble_model.fit(X_train, y_train)
+        
+        # Get predictions from ensemble
+        y_pred_ensemble = ensemble_model.predict(X_test)
+        
+        # Calculate ensemble metrics
+        mse_ensemble = mean_squared_error(y_test, y_pred_ensemble)
+        rmse_ensemble = mse_ensemble ** 0.5
+        mae_ensemble = mean_absolute_error(y_test, y_pred_ensemble)
+        r2_ensemble = r2_score(y_test, y_pred_ensemble)
+
+        best_metrics = {
+            "rmse": rmse_ensemble,
+            "mae": mae_ensemble,
+            "r2": r2_ensemble,
+            "model_name": "Advanced Ensemble (RF+GB+SVM+Ridge)",
+            "n_train": len(X_train),
+            "n_test": len(X_test),
+            "feature_importance": dict(zip(feature_cols, ensemble_model.estimators_[0].feature_importances_))
+        }
+
+        return ensemble_model, best_metrics, feature_cols
+
+    except Exception as e:
+        st.error(f"Error in model training: {e}")
+        # Fallback to simple model
+        return train_fallback_model(dataset_path)
+
+def train_fallback_model(dataset_path: str):
+    """Fallback model in case advanced training fails"""
+    df = pd.read_csv(dataset_path)
+    
     feature_cols = [
         "age", "gender", "temperature",
         "systolic_bp", "diastolic_bp", "heart_rate",
@@ -380,97 +532,36 @@ def train_ml_model(dataset_path: str):
     X = df[feature_cols]
     y = df[target_col]
 
-    # Train–test split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=pd.cut(y, bins=5)
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Try multiple models and select the best one
-    models = {
-        "Random Forest": RandomForestRegressor(
-            n_estimators=200,
-            max_depth=10,
-            min_samples_split=5,
-            min_samples_leaf=2,
-            random_state=42
-        ),
-        "Gradient Boosting": GradientBoostingRegressor(
-            n_estimators=150,
-            max_depth=6,
-            learning_rate=0.1,
-            random_state=42
-        ),
-        "SVM": Pipeline([
-            ("scaler", StandardScaler()),
-            ("svr", SVR(kernel='rbf', C=1.0, epsilon=0.1))
-        ])
-    }
-
-    best_model = None
-    best_score = -float('inf')
-    best_metrics = {}
-    best_name = ""
-
-    for name, model in models.items():
-        try:
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-            
-            # Calculate metrics
-            mse = mean_squared_error(y_test, y_pred)
-            rmse = mse ** 0.5
-            mae = mean_absolute_error(y_test, y_pred)
-            r2 = r2_score(y_test, y_pred)
-            
-            # Use R² as primary metric, but prefer models with good RMSE too
-            score = r2 - (rmse / 100)  # Combined metric
-            
-            if score > best_score:
-                best_score = score
-                best_model = model
-                best_metrics = {
-                    "rmse": rmse,
-                    "mae": mae,
-                    "r2": r2,
-                    "model_name": name
-                }
-                best_name = name
-                
-        except Exception as e:
-            st.warning(f"Model {name} failed: {e}")
-            continue
-
-    if best_model is None:
-        # Fallback to Random Forest
-        st.warning("All models failed, using default Random Forest")
-        best_model = RandomForestRegressor(n_estimators=100, random_state=42)
-        best_model.fit(X_train, y_train)
-        y_pred = best_model.predict(X_test)
-        mse = mean_squared_error(y_test, y_pred)
-        best_metrics = {
-            "rmse": mse ** 0.5,
-            "mae": mean_absolute_error(y_test, y_pred),
-            "r2": r2_score(y_test, y_pred),
-            "model_name": "Fallback Random Forest"
-        }
-
-    best_metrics.update({
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    
+    y_pred = model.predict(X_test)
+    
+    best_metrics = {
+        "rmse": mean_squared_error(y_test, y_pred) ** 0.5,
+        "mae": mean_absolute_error(y_test, y_pred),
+        "r2": r2_score(y_test, y_pred),
+        "model_name": "Fallback Random Forest",
         "n_train": len(X_train),
         "n_test": len(X_test)
-    })
+    }
 
-    return best_model, best_metrics, feature_cols
+    return model, best_metrics, feature_cols
 
 # =========================================================
 #  UTIL FUNCTIONS
 # =========================================================
 def map_risk_level(score: float) -> tuple:
     """Improved risk level mapping with better thresholds"""
-    if score < 25:
+    if score < 20:
         return "Low Risk", "risk-low"
-    elif score < 50:
+    elif score < 40:
+        return "Mild Risk", "risk-low"
+    elif score < 60:
         return "Moderate Risk", "risk-moderate"
-    elif score < 75:
+    elif score < 80:
         return "High Risk", "risk-high"
     else:
         return "Very High Risk", "risk-very-high"
@@ -617,13 +708,20 @@ def main():
         st.markdown(f"""
         <div style='text-align: center; padding: 1rem 0;'>
             <h2 style='color: #f8fafc; margin: 0;'>🩺 MEDICAL AI</h2>
-            <p style='color: #94a3b8; margin: 0; font-size: 0.9rem;'>Deep Learning · Case Study Trained</p>
+            <p style='color: #94a3b8; margin: 0; font-size: 0.9rem;'>Advanced Ensemble ML · Real-time Analysis</p>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("---")
         
-        role = st.radio("**Select Role:**", ["Patient", "Doctor"])
+        # ROLE SELECTION - IMPROVED VISIBILITY
+        st.markdown("<h3 style='color: #f1f5f9; margin-bottom: 1rem;'>Select Role:</h3>", unsafe_allow_html=True)
+        role = st.radio(
+            "",
+            ["Patient", "Doctor"],
+            label_visibility="collapsed",
+            key="role_selector"
+        )
         
         st.markdown("---")
         
@@ -635,6 +733,14 @@ def main():
             with col2:
                 st.metric("RMSE", f"{metrics['rmse']:.2f}")
                 st.metric("Training Samples", metrics['n_train'])
+            
+            # Show feature importance if available
+            if 'feature_importance' in metrics:
+                with st.expander("Top Features"):
+                    top_features = sorted(metrics['feature_importance'].items(), 
+                                        key=lambda x: x[1], reverse=True)[:5]
+                    for feature, importance in top_features:
+                        st.write(f"• {feature}: {importance:.3f}")
         
         with st.expander("ℹ️ Quick Guide", expanded=False):
             st.markdown("""
@@ -651,9 +757,9 @@ def main():
     # ----------- MAIN HEADER -----------
     st.markdown("""
     <div style='text-align: center; padding: 1rem 0 2rem 0;'>
-        <h1 style='color: #f8fafc; margin: 0; font-size: 2.5rem;'>⚕ MEDICAL AI CONSULTATION</h1>
+        <h1 style='color: #f8fafc; margin: 0; font-size: 2.5rem;'>⚕ ADVANCED MEDICAL AI CONSULTATION</h1>
         <p style='color: #94a3b8; margin: 0.5rem 0 0 0; font-size: 1.1rem;'>
-        Deep Learning · Case Study Trained · Smart Medical Advice
+        Ensemble ML · Feature Engineering · Real-time Risk Assessment
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -723,7 +829,7 @@ def main():
 
             # Patient Form
             with st.form("patient_form", clear_on_submit=False):
-                # Personal Information
+                # Personal Information - IMPROVED VISIBILITY
                 st.markdown("<div class='professional-card'>", unsafe_allow_html=True)
                 st.markdown("<div class='section-header'>👤 Personal Information</div>", unsafe_allow_html=True)
                 
@@ -738,12 +844,12 @@ def main():
                     gender_display = st.selectbox("**Gender**", ["Male", "Female", "Other"])
                 st.markdown("</div>", unsafe_allow_html=True)
 
-                # Vitals & Measurements
+                # Vitals & Measurements - IMPROVED VISIBILITY
                 st.markdown("<div class='professional-card'>", unsafe_allow_html=True)
                 st.markdown("<div class='section-header'>💓 Vitals & Measurements</div>", unsafe_allow_html=True)
                 
                 # Temperature with converter
-                st.markdown("**Temperature**")
+                st.markdown("<strong style='color: #f1f5f9;'>Temperature</strong>", unsafe_allow_html=True)
                 temp_col1, temp_col2 = st.columns([2, 1])
                 with temp_col1:
                     temp_value = st.number_input("Value", min_value=30.0, max_value=110.0, value=98.6, step=0.1, label_visibility="collapsed")
@@ -768,7 +874,7 @@ def main():
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Other vitals - FIXED VISIBILITY
+                # Other vitals - IMPROVED VISIBILITY
                 col_v1, col_v2, col_v3 = st.columns(3)
                 with col_v1:
                     heart_rate = st.number_input("**Heart Rate (bpm)**", 40, 200, 80)
@@ -780,7 +886,7 @@ def main():
                 duration = st.number_input("**Days since symptoms started**", 0, 30, 1)
                 st.markdown("</div>", unsafe_allow_html=True)
 
-                # Symptoms
+                # Symptoms - IMPROVED VISIBILITY
                 st.markdown("<div class='professional-card'>", unsafe_allow_html=True)
                 st.markdown("<div class='section-header'>🤒 Symptoms Checklist</div>", unsafe_allow_html=True)
                 
@@ -794,6 +900,7 @@ def main():
                 with col_s3:
                     chest_pain = st.checkbox("Chest Pain")
                     body_pain = st.checkbox("Body Pain")
+                    breathing_difficulty = st.checkbox("Breathing Difficulty")
                 st.markdown("</div>", unsafe_allow_html=True)
 
                 # Additional Information
@@ -824,6 +931,12 @@ def main():
 
                 gender = 1 if gender_display == "Male" else 0
 
+                # Feature engineering for prediction
+                bp_ratio = sys_bp / dias_bp if dias_bp > 0 else 1.5
+                mean_arterial_pressure = dias_bp + (sys_bp - dias_bp) / 3
+                symptom_count = sum([cough, throat_pain, ear_pain, chest_pain, headache, body_pain])
+                fever_indicator = 1 if temp_celsius > 38.0 else 0
+
                 # Build feature vector (using Celsius for model)
                 feature_row = {
                     "age": age,
@@ -839,6 +952,10 @@ def main():
                     "headache": int(headache),
                     "body_pain": int(body_pain),
                     "duration_days": duration,
+                    "bp_ratio": bp_ratio,
+                    "mean_arterial_pressure": mean_arterial_pressure,
+                    "symptom_count": symptom_count,
+                    "fever_indicator": fever_indicator
                 }
 
                 # Check for emergency conditions (using Celsius)
@@ -846,7 +963,8 @@ def main():
                     'ear_pain': ear_pain,
                     'throat_pain': throat_pain,
                     'cough': cough,
-                    'chest_pain': chest_pain
+                    'chest_pain': chest_pain,
+                    'breathing_difficulty': breathing_difficulty
                 }
                 
                 vitals_dict = {
@@ -859,7 +977,15 @@ def main():
                 st.session_state.emergency_conditions = emergency_conditions
                 st.session_state.is_emergency = len(emergency_conditions) > 0
 
+                # Prepare data for prediction
                 X_new = pd.DataFrame([feature_row])
+                
+                # Ensure all required features are present
+                for col in feature_cols:
+                    if col not in X_new.columns:
+                        X_new[col] = 0  # Default value for missing engineered features
+
+                X_new = X_new[feature_cols]
 
                 # ML prediction
                 risk_score = float(model.predict(X_new)[0])
@@ -884,7 +1010,8 @@ def main():
                     f"{'ear pain, ' if ear_pain else ''}"
                     f"{'chest pain, ' if chest_pain else ''}"
                     f"{'headache, ' if headache else ''}"
-                    f"{'body pain, ' if body_pain else ''}".rstrip(", ")
+                    f"{'body pain, ' if body_pain else ''}"
+                    f"{'breathing difficulty, ' if breathing_difficulty else ''}".rstrip(", ")
                 )
 
                 if free_text.strip():
@@ -895,7 +1022,7 @@ def main():
                     structured_text += f"\n\n🚨 EMERGENCY CONDITIONS: {', '.join(emergency_conditions)}"
 
                 # LLM explanation
-                with st.spinner("🔬 Analyzing with AI..." if not st.session_state.is_emergency else "🚨 Analyzing emergency situation..."):
+                with st.spinner("🔬 Analyzing with Advanced AI..." if not st.session_state.is_emergency else "🚨 Analyzing emergency situation..."):
                     ai_text = build_llm_response(
                         structured_text, 
                         risk_score, 
@@ -935,13 +1062,16 @@ def main():
                     <div class='professional-card {risk_class}'>
                         <div style='display: flex; justify-content: space-between; align-items: center;'>
                             <div>
-                                <h3 style='margin: 0; color: #f8fafc;'>Risk Assessment</h3>
+                                <h3 style='margin: 0; color: #f8fafc;'>Advanced Risk Assessment</h3>
                                 <p style='margin: 0.5rem 0 0 0; color: #e2e8f0;'>
                                 <strong>Score:</strong> {rs:.1f}/100 | <strong>Level:</strong> {rl}
                                 </p>
+                                <p style='margin: 0.3rem 0 0 0; color: #94a3b8; font-size: 0.9rem;'>
+                                Powered by Ensemble ML with Feature Engineering
+                                </p>
                             </div>
                             <div style='font-size: 1.5rem; color: #e2e8f0;'>
-                                {'🚨' if rs >= 60 else '⚠️' if rs >= 30 else '✅'}
+                                {'🚨' if rs >= 60 else '⚠️' if rs >= 40 else '✅'}
                             </div>
                         </div>
                     </div>
@@ -1059,6 +1189,12 @@ def main():
                     with col_d2:
                         st.metric("Risk Score", f"{rs:.1f}/100")
                         st.metric("Status", "🚨 EMERGENCY" if st.session_state.is_emergency else "🟡 Routine")
+                    
+                    # Show ML confidence
+                    st.markdown("---")
+                    st.markdown("#### 🤖 AI Model Insights")
+                    st.markdown(f"**Model Used:** {metrics.get('model_name', 'Ensemble')}")
+                    st.markdown(f"**Prediction Confidence (R²):** {metrics['r2']:.3f}")
                     
                     st.markdown("</div>", unsafe_allow_html=True)
 
