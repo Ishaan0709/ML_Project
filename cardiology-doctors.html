@@ -167,6 +167,12 @@
         .doctor-image {
             height: 220px;
             overflow: hidden;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
         }
 
         .doctor-image img {
@@ -410,26 +416,25 @@
     <!-- Page Header -->
     <section class="page-header">
         <h1>Cardiology Department</h1>
-        <p>Meet our expert cardiology specialists and their AI assistants specializing in heart and cardiovascular health</p>
+        <p>Meet India's top cardiology specialists and their AI assistants specializing in heart and cardiovascular health</p>
     </section>
 
     <!-- Main Content -->
     <section class="main-container">
         <div class="section-title">
-            <h2>Our Cardiology Specialists</h2>
+            <h2>India's Top Cardiology Specialists</h2>
             <p>Each doctor is supported by a specialized AI assistant trained on their medical expertise</p>
         </div>
 
         <div class="doctors-grid">
-            <!-- Doctor 1 -->
+            <!-- Doctor 1 - Dr. Naresh Trehan -->
             <div class="doctor-card">
                 <div class="doctor-image">
-                    <!-- Indian MALE Cardiology specialist -->
-                    <img src="cardiology1.jpg" alt="Dr. Rajesh Malhotra">
+                    <i class="fas fa-user-md"></i>
                 </div>
                 <div class="doctor-info">
                     <div class="doctor-name-rating">
-                        <h3>Dr. Rajesh Malhotra</h3>
+                        <h3>Dr. Naresh Trehan</h3>
                         <div class="rating">
                             <i class="fas fa-star"></i>
                             <span>4.9</span>
@@ -438,23 +443,23 @@
                     <div class="doctor-details">
                         <div class="detail-item">
                             <i class="fas fa-envelope"></i>
-                            <p>rajesh.malhotra@example.com</p>
+                            <p>naresh.trehan@example.com</p>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-graduation-cap"></i>
-                            <p>DM Cardiology, MD Medicine, Fellowship in Interventional Cardiology</p>
+                            <p>MBBS, MS, Cardiovascular Surgery</p>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-hospital"></i>
-                            <p>Apollo Hospitals, Delhi</p>
+                            <p>Medanta - The Medicity, Gurgaon</p>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-phone"></i>
-                            <p>+91-9876543220</p>
+                            <p>+91-9876543201</p>
                         </div>
                     </div>
                     <div class="doctor-description">
-                        "Interventional cardiology specialist with expertise in complex angioplasty and stent placements with 15+ years of experience."
+                        "Considered by many as India's top cardiologist with a vast number of heart surgeries to his name. Chairman of Medanta - The Medicity."
                     </div>
                     <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
                         <i class="fas fa-robot"></i> Consult AI Doctor
@@ -462,15 +467,54 @@
                 </div>
             </div>
 
-            <!-- Doctor 2 -->
+            <!-- Doctor 2 - Dr. Ashok Seth -->
             <div class="doctor-card">
                 <div class="doctor-image">
-                    <!-- Indian FEMALE Cardiology specialist -->
-                    <img src="cardiology2.jpg" alt="Dr. Priya Sharma">
+                    <i class="fas fa-user-md"></i>
                 </div>
                 <div class="doctor-info">
                     <div class="doctor-name-rating">
-                        <h3>Dr. Priya Sharma</h3>
+                        <h3>Dr. Ashok Seth</h3>
+                        <div class="rating">
+                            <i class="fas fa-star"></i>
+                            <span>4.9</span>
+                        </div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <p>ashok.seth@example.com</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-graduation-cap"></i>
+                            <p>MBBS, MD, DM Cardiology</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-hospital"></i>
+                            <p>Fortis Escorts Heart Institute, Delhi</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <p>+91-9876543202</p>
+                        </div>
+                    </div>
+                    <div class="doctor-description">
+                        "Leading interventional cardiologist known for complex angioplasties and TAVR procedures. Chairman of Cardiac Sciences at Fortis Escorts."
+                    </div>
+                    <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
+                        <i class="fas fa-robot"></i> Consult AI Doctor
+                    </button>
+                </div>
+            </div>
+
+            <!-- Doctor 3 - Dr. Devi Prasad Shetty -->
+            <div class="doctor-card">
+                <div class="doctor-image">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="doctor-info">
+                    <div class="doctor-name-rating">
+                        <h3>Dr. Devi Prasad Shetty</h3>
                         <div class="rating">
                             <i class="fas fa-star"></i>
                             <span>4.8</span>
@@ -479,93 +523,11 @@
                     <div class="doctor-details">
                         <div class="detail-item">
                             <i class="fas fa-envelope"></i>
-                            <p>priya.sharma@example.com</p>
+                            <p>devi.shetty@example.com</p>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-graduation-cap"></i>
-                            <p>DM Cardiology, Fellowship in Electrophysiology</p>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-hospital"></i>
-                            <p>Fortis Hospital, Mumbai</p>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-phone"></i>
-                            <p>+91-9876543221</p>
-                        </div>
-                    </div>
-                    <div class="doctor-description">
-                        "Cardiac electrophysiologist specializing in arrhythmia management, pacemaker and ICD implants."
-                    </div>
-                    <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
-                        <i class="fas fa-robot"></i> Consult AI Doctor
-                    </button>
-                </div>
-            </div>
-
-            <!-- Doctor 3 -->
-            <div class="doctor-card">
-                <div class="doctor-image">
-                    <!-- Indian MALE Cardiology specialist -->
-                    <img src="cardiology3.jpg" alt="Dr. Amit Verma">
-                </div>
-                <div class="doctor-info">
-                    <div class="doctor-name-rating">
-                        <h3>Dr. Amit Verma</h3>
-                        <div class="rating">
-                            <i class="fas fa-star"></i>
-                            <span>4.7</span>
-                        </div>
-                    </div>
-                    <div class="doctor-details">
-                        <div class="detail-item">
-                            <i class="fas fa-envelope"></i>
-                            <p>amit.verma@example.com</p>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-graduation-cap"></i>
-                            <p>DM Cardiology, Fellowship in Heart Failure & Transplant</p>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-hospital"></i>
-                            <p>Max Super Speciality, Delhi</p>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-phone"></i>
-                            <p>+91-9876543222</p>
-                        </div>
-                    </div>
-                    <div class="doctor-description">
-                        "Heart failure and transplant specialist with expertise in advanced cardiac therapies and ventricular assist devices."
-                    </div>
-                    <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
-                        <i class="fas fa-robot"></i> Consult AI Doctor
-                    </button>
-                </div>
-            </div>
-
-            <!-- Doctor 4 -->
-            <div class="doctor-card">
-                <div class="doctor-image">
-                    <!-- Indian FEMALE Cardiology specialist -->
-                    <img src="cardiology4.jpg" alt="Dr. Anjali Kapoor">
-                </div>
-                <div class="doctor-info">
-                    <div class="doctor-name-rating">
-                        <h3>Dr. Anjali Kapoor</h3>
-                        <div class="rating">
-                            <i class="fas fa-star"></i>
-                            <span>4.9</span>
-                        </div>
-                    </div>
-                    <div class="doctor-details">
-                        <div class="detail-item">
-                            <i class="fas fa-envelope"></i>
-                            <p>anjali.kapoor@example.com</p>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-graduation-cap"></i>
-                            <p>DM Cardiology, Fellowship in Pediatric Cardiology</p>
+                            <p>MBBS, MS, MCh Cardiovascular Surgery</p>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-hospital"></i>
@@ -573,11 +535,11 @@
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-phone"></i>
-                            <p>+91-9876543223</p>
+                            <p>+91-9876543203</p>
                         </div>
                     </div>
                     <div class="doctor-description">
-                        "Pediatric cardiology specialist with expertise in congenital heart diseases and pediatric cardiac interventions."
+                        "Pioneer in pediatric cardiac surgery with over 15,000 successful heart surgeries. Founder and Chairman of Narayana Health."
                     </div>
                     <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
                         <i class="fas fa-robot"></i> Consult AI Doctor
@@ -585,56 +547,14 @@
                 </div>
             </div>
 
-            <!-- Doctor 5 -->
+            <!-- Doctor 4 - Dr. Yugal Kishore Mishra -->
             <div class="doctor-card">
                 <div class="doctor-image">
-                    <!-- Indian MALE Cardiology specialist -->
-                    <img src="cardiology5.jpg" alt="Dr. Vikram Singh">
+                    <i class="fas fa-user-md"></i>
                 </div>
                 <div class="doctor-info">
                     <div class="doctor-name-rating">
-                        <h3>Dr. Vikram Singh</h3>
-                        <div class="rating">
-                            <i class="fas fa-star"></i>
-                            <span>4.6</span>
-                        </div>
-                    </div>
-                    <div class="doctor-details">
-                        <div class="detail-item">
-                            <i class="fas fa-envelope"></i>
-                            <p>vikram.singh@example.com</p>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-graduation-cap"></i>
-                            <p>DM Cardiology, Fellowship in Preventive Cardiology</p>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-hospital"></i>
-                            <p>Medanta Hospital, Gurgaon</p>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-phone"></i>
-                            <p>+91-9876543224</p>
-                        </div>
-                    </div>
-                    <div class="doctor-description">
-                        "Preventive cardiology specialist with focus on cardiac risk assessment and lifestyle modification programs."
-                    </div>
-                    <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
-                        <i class="fas fa-robot"></i> Consult AI Doctor
-                    </button>
-                </div>
-            </div>
-
-            <!-- Doctor 6 -->
-            <div class="doctor-card">
-                <div class="doctor-image">
-                    <!-- Indian FEMALE Cardiology specialist -->
-                    <img src="cardiology6.jpg" alt="Dr. Sneha Reddy">
-                </div>
-                <div class="doctor-info">
-                    <div class="doctor-name-rating">
-                        <h3>Dr. Sneha Reddy</h3>
+                        <h3>Dr. Yugal Kishore Mishra</h3>
                         <div class="rating">
                             <i class="fas fa-star"></i>
                             <span>4.8</span>
@@ -643,23 +563,103 @@
                     <div class="doctor-details">
                         <div class="detail-item">
                             <i class="fas fa-envelope"></i>
-                            <p>sneha.reddy@example.com</p>
+                            <p>yugal.mishra@example.com</p>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-graduation-cap"></i>
-                            <p>DM Cardiology, Fellowship in Non-Invasive Cardiology</p>
+                            <p>MBBS, MS, MCh Cardiovascular Surgery</p>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-hospital"></i>
-                            <p>Kokilaben Hospital, Mumbai</p>
+                            <p>Manipal Hospital, Delhi</p>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-phone"></i>
-                            <p>+91-9876543225</p>
+                            <p>+91-9876543204</p>
                         </div>
                     </div>
                     <div class="doctor-description">
-                        "Non-invasive cardiology specialist with expertise in echocardiography and cardiac imaging modalities."
+                        "Highly respected cardiologist and cardiac surgeon with extensive experience in complex cardiac procedures and heart transplants."
+                    </div>
+                    <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
+                        <i class="fas fa-robot"></i> Consult AI Doctor
+                    </button>
+                </div>
+            </div>
+
+            <!-- Doctor 5 - Dr. Ramakanta Panda -->
+            <div class="doctor-card">
+                <div class="doctor-image">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="doctor-info">
+                    <div class="doctor-name-rating">
+                        <h3>Dr. Ramakanta Panda</h3>
+                        <div class="rating">
+                            <i class="fas fa-star"></i>
+                            <span>4.9</span>
+                        </div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <p>ramakanta.panda@example.com</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-graduation-cap"></i>
+                            <p>MBBS, MS, MCh Cardiovascular Surgery</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-hospital"></i>
+                            <p>Asian Heart Institute, Mumbai</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <p>+91-9876543205</p>
+                        </div>
+                    </div>
+                    <div class="doctor-description">
+                        "Renowned for pioneering total arterial revascularisation and off-pump bypass surgery. Vice Chairman of Asian Heart Institute."
+                    </div>
+                    <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
+                        <i class="fas fa-robot"></i> Consult AI Doctor
+                    </button>
+                </div>
+            </div>
+
+            <!-- Doctor 6 - Dr. T. S. Kler -->
+            <div class="doctor-card">
+                <div class="doctor-image">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="doctor-info">
+                    <div class="doctor-name-rating">
+                        <h3>Dr. T. S. Kler</h3>
+                        <div class="rating">
+                            <i class="fas fa-star"></i>
+                            <span>4.8</span>
+                        </div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <p>ts.kler@example.com</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-graduation-cap"></i>
+                            <p>MBBS, MD, DM Cardiology</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-hospital"></i>
+                            <p>BLK-Max Super Speciality Hospital, Delhi</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <p>+91-9876543206</p>
+                        </div>
+                    </div>
+                    <div class="doctor-description">
+                        "Leading interventional cardiologist with expertise in complex coronary interventions and electrophysiology procedures."
                     </div>
                     <button class="btn btn-primary" onclick="location.href='https://mlproject07web.streamlit.app/'">
                         <i class="fas fa-robot"></i> Consult AI Doctor
